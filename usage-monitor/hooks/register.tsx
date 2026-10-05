@@ -144,7 +144,7 @@ export const register: Register = on => {
       <Box flexDirection="column">
         <Text bold>Session</Text>
         <Text>
-          new {compact(all.tokens.input)} · cached {compact(all.tokens.cacheRead)} · written{' '}
+          new {compact(all.tokens.input)} · cache reads {compact(all.tokens.cacheRead)} · written{' '}
           {compact(all.tokens.cacheWrite)} · out {compact(all.tokens.output)}
         </Text>
         <Text>
@@ -193,7 +193,8 @@ export const register: Register = on => {
         })}
         {tools.length > MAX_TOOLS && <Text dimColor>+{tools.length - MAX_TOOLS} more tools</Text>}
 
-        <Box marginTop={1}>
+        <Box marginTop={1} flexDirection="column">
+          <Text dimColor>cache reads = the context re-read from cache on every request, summed</Text>
           <Text dimColor>est. = list price × tokens; cache writes at the 5-minute rate (1.25×)</Text>
         </Box>
       </Box>

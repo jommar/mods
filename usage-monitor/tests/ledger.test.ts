@@ -100,8 +100,17 @@ test('the token line leads with the total', () => {
   })
 
   expect(tokenLine(ledger.rows['agent-1']!)).toBe(
-    '26k tokens (new 1.0k · cached 24k · written 700 · out 500) · <$0.01',
+    '26k tokens (new 1.0k · cache reads 24k · written 700 · out 500) · <$0.01',
   )
+})
+
+test('a row that only ran tools, with no label and no request, is not a subagent', () => {
+  let ledger = addToolCall(emptyLedger(), 'ghost', 'Bash')
+  ledger = setLabel(ledger, 'spawned', 'Explore: find files')
+  ledger = addUsage(ledger, 'unlabeled', 'claude-haiku-4-5', MILLION)
+
+  expect(subagentIds(ledger)).toEqual(['spawned', 'unlabeled'])
+  expect(totals(ledger).tools).toEqual({ Bash: 1 })
 })
 
 test('records each model a loop used, once, and falls back to the spawn model', () => {

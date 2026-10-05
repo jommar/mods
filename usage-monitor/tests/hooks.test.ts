@@ -54,7 +54,7 @@ test('a model request adds its tokens to the main thread', async ($, on) => {
 
   const ui = await $.ui.mount(PANE)
 
-  expect(await ui.find({ type: 'Text', text: /new 100 · cached 900 · written 10 · out 50/ })).toBeDefined()
+  expect(await ui.find({ type: 'Text', text: /new 100 · cache reads 900 · written 10 · out 50/ })).toBeDefined()
   expect(await ui.find({ type: 'Text', text: /1 requests/ })).toBeDefined()
   expect(await ui.find({ type: 'Text', text: /claude-sonnet-5-5/ })).toBeDefined()
   await ui.unmount()

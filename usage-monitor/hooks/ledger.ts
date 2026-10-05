@@ -138,8 +138,12 @@ export function totals(ledger: UsageLedger): UsageRow {
   return sum
 }
 
+const isSubagentRow = (row: UsageRow): boolean => row.label !== undefined || row.requests > 0
+
 export const subagentIds = (ledger: UsageLedger): string[] =>
-  Object.keys(ledger.rows).filter(id => id !== MAIN)
+  Object.entries(ledger.rows)
+    .filter(([id, row]) => id !== MAIN && isSubagentRow(row))
+    .map(([id]) => id)
 
 export function compact(n: number): string {
   if (n < 1000) {
@@ -172,7 +176,7 @@ export function tokenLine(row: UsageRow): string {
   const { input, output, cacheRead, cacheWrite } = row.tokens
   const cost = estimate(row.costUsd, row.unpricedModels.length > 0)
 
-  return `${compact(totalTokens(row.tokens))} tokens (new ${compact(input)} · cached ${compact(cacheRead)} · written ${compact(cacheWrite)} · out ${compact(output)}) · ${cost}`
+  return `${compact(totalTokens(row.tokens))} tokens (new ${compact(input)} · cache reads ${compact(cacheRead)} · written ${compact(cacheWrite)} · out ${compact(output)}) · ${cost}`
 }
 
 export function statusText(ledger: UsageLedger): string {
