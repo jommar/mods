@@ -1,0 +1,6 @@
+{
+  "name": "jommar-mods",
+  "owner": { "name": "Jommar Ilagan" },
+  "description": "Personal Claude Code mods",
+  "plugins": [{ "name": "usage-monitor", "source": "./usage-monitor" }]
+}

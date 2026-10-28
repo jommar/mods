@@ -15,6 +15,22 @@ The mod works on its own. **Optionally** it also reports every model request, to
 [usage-monitor API](https://github.com/jommar/api/blob/master/usage-monitor/README.md), which keeps the history in SQLite and serves a web
 dashboard. Reporting is **off** until you give the mod the API's socket.
 
+## Install
+
+In a Claude Code terminal session:
+
+```
+/plugin install usage-monitor --marketplace jommar/mods
+```
+
+Answer `y` to add the marketplace, then pick a scope (the user scope keeps the mod on in every session). The install
+then shows a screen for the optional **API socket**; leave it empty to keep reporting off. The mod is active as soon
+as it is installed, with no reload.
+
+From a shell the same install is `claude plugin install usage-monitor --marketplace jommar/mods`. In the desktop app,
+where `/plugin` does not run, click + next to the prompt box, then Plugins, Add marketplace with `jommar/mods`, then
+Add plugin.
+
 ## Report to the API (optional)
 
 1. Install and start the API first: follow its [Install section](https://github.com/jommar/api/blob/master/usage-monitor/README.md#install).
