@@ -27,18 +27,21 @@ Answer `y` to add the marketplace, then pick a scope (the user scope keeps the m
 then shows a screen for the optional **API socket**; leave it empty to keep reporting off. The mod is active as soon
 as it is installed, with no reload.
 
-From a shell the same install is `claude plugin install usage-monitor --marketplace jommar/mods`. In the desktop app,
+From a shell the same install is `claude plugin install usage-monitor --marketplace jommar/mods`; it installs without
+an API socket and says how to set one (see [Report to the API](#report-to-the-api-optional)). In the desktop app,
 where `/plugin` does not run, click + next to the prompt box, then Plugins, Add marketplace with `jommar/mods`, then
 Add plugin.
 
 ## Report to the API (optional)
 
 1. Install and start the API first: follow its [Install section](https://github.com/jommar/api/blob/master/usage-monitor/README.md#install).
-2. Give the mod the socket. In Claude Code open `/config` and set usage-monitor's **API socket** to the absolute
-   path `/run/user/<uid>/usage-monitor.sock` (`id -u` prints your uid; `$XDG_RUNTIME_DIR` is not expanded there).
-   Changing it in `/config` reloads the mod. If you edit `settings.json` by hand instead, the setting is
-   `pluginConfigs["usage-monitor@inline"].options.apiSocket` (the key after the name depends on how the mod is
-   loaded), and you should start a new session afterwards.
+2. Give the mod the socket: the absolute path `/run/user/<uid>/usage-monitor.sock` (`id -u` prints your uid;
+   `$XDG_RUNTIME_DIR` is not expanded there). For a mod installed from the marketplace, run
+   `/plugin configure usage-monitor@jommar-mods` in Claude Code, or install it with
+   `claude plugin install usage-monitor --marketplace jommar/mods --config apiSocket=/run/user/<uid>/usage-monitor.sock`.
+   It is stored as `pluginConfigs["usage-monitor@jommar-mods"].options.apiSocket` in `settings.json`; start a new
+   session afterwards. A mod loaded from a folder (`--plugin-dir`, `CLAUDE_CODE_PLUGIN_DIRS`) has it in the `/config`
+   menu instead, where changing it reloads the mod, and its `settings.json` key is `usage-monitor@inline`.
 3. Check it: use the session for a moment, then open `http://127.0.0.1:7842/`, or run
    `curl --unix-socket /run/user/$(id -u)/usage-monitor.sock http://usage-monitor/api/sessions`.
 
