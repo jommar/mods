@@ -12,12 +12,12 @@ Costs are estimates: list price times tokens, with cache writes at the 5-minute 
 list price is counted but not priced.
 
 The mod works on its own. **Optionally** it also reports every model request, tool call and subagent to a local
-[usage-monitor API](../../api/usage-monitor/README.md), which keeps the history in SQLite and serves a web
+[usage-monitor API](https://github.com/jommar/api/blob/master/usage-monitor/README.md), which keeps the history in SQLite and serves a web
 dashboard. Reporting is **off** until you give the mod the API's socket.
 
 ## Report to the API (optional)
 
-1. Install and start the API first: follow its [Install section](../../api/usage-monitor/README.md#install).
+1. Install and start the API first: follow its [Install section](https://github.com/jommar/api/blob/master/usage-monitor/README.md#install).
 2. Give the mod the socket. In Claude Code open `/config` and set usage-monitor's **API socket** to the absolute
    path `/run/user/<uid>/usage-monitor.sock` (`id -u` prints your uid; `$XDG_RUNTIME_DIR` is not expanded there).
    Changing it in `/config` reloads the mod. If you edit `settings.json` by hand instead, the setting is
