@@ -19,7 +19,18 @@ import {
   totals,
   usd,
 } from './ledger'
-import { report, usageEvent } from './report'
+import {
+  EVENTS_URL,
+  FLUSH_MS,
+  MAX_BATCH,
+  MAX_QUEUE,
+  RETRY_MAX_MS,
+  RETRY_MIN_MS,
+  TIMEOUT_MS,
+  encode,
+  usageEvent,
+} from './report'
+import type { ReportEvent, StampedEvent } from './report'
 
 const PANE = 'usage-monitor'
 const MAX_AGENTS = 12
@@ -31,6 +42,88 @@ const publish = ($: EngineInterface, next: UsageLedger) =>
   $.ui.status(Object.keys(next.rows).length === 0 ? undefined : statusText(next))
 
 const shorten = (text: string, max: number) => (text.length > max ? `${text.slice(0, max - 1)}…` : text)
+
+// The reporter lives here, not in ./report: $ may only be passed to functions declared in this file.
+const queue: StampedEvent[] = []
+let isBusy = false
+let retryMs = RETRY_MIN_MS
+
+async function send($: EngineInterface, socket: string, events: StampedEvent[]) {
+  const stop = new AbortController()
+  const timeout = $.clock
+    .sleep(TIMEOUT_MS, { signal: stop.signal })
+    .then(() => Promise.reject(new Error('usage-monitor API timed out')))
+
+  try {
+    const request = $.http.fetch(EVENTS_URL, {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: encode(events),
+      socketPath: socket,
+    })
+
+    return await Promise.race([request, timeout])
+  } finally {
+    stop.abort()
+  }
+}
+
+async function flush($: EngineInterface, socket: string) {
+  const batch = queue.splice(0, MAX_BATCH)
+  let delay = FLUSH_MS
+
+  // A 4xx means the API refused the contract: that batch is dropped, never retried.
+  const isDone = await send($, socket, batch).then(
+    response => response.status < 500,
+    () => false,
+  )
+
+  if (isDone) {
+    retryMs = RETRY_MIN_MS
+  } else {
+    queue.unshift(...batch)
+    queue.splice(0, Math.max(0, queue.length - MAX_QUEUE))
+    delay = retryMs
+    retryMs = Math.min(retryMs * 2, RETRY_MAX_MS)
+  }
+
+  isBusy = false
+
+  if (queue.length > 0) {
+    schedule($, socket, delay)
+  }
+}
+
+// One flush is waiting or running at a time; the next is scheduled when it ends.
+function schedule($: EngineInterface, socket: string, ms: number) {
+  if (isBusy) {
+    return
+  }
+
+  $.clock.after(ms, () => void flush($, socket).catch(() => {}))
+  isBusy = true
+}
+
+async function enqueue($: EngineInterface, socket: string, event: ReportEvent, session: string | undefined) {
+  const ts = Date.now()
+  const id = session ?? (await $.session.id())
+
+  queue.push({ ...event, id: crypto.randomUUID(), v: 1, session: id, ts })
+  queue.splice(0, Math.max(0, queue.length - MAX_QUEUE))
+  schedule($, socket, FLUSH_MS)
+}
+
+/**
+ * Queues an event in memory and POSTs queued events to the usage-monitor API over its Unix
+ * socket. Does nothing when `socket` is empty. A hook never waits on it: this only starts
+ * work, and every failure is swallowed. `session` is the session's id when the event is
+ * about one that is not the current one.
+ */
+function report($: EngineInterface, socket: string, event: ReportEvent, session?: string) {
+  if (socket !== '') {
+    void enqueue($, socket, event, session).catch(() => {})
+  }
+}
 
 export const register: Register = (on, options) => {
   const socket = String(options.apiSocket ?? '')
