@@ -19,6 +19,7 @@ import {
   totals,
   usd,
 } from './ledger'
+import { report, usageEvent } from './report'
 
 const PANE = 'usage-monitor'
 const MAX_AGENTS = 12
@@ -31,8 +32,11 @@ const publish = ($: EngineInterface, next: UsageLedger) =>
 
 const shorten = (text: string, max: number) => (text.length > max ? `${text.slice(0, max - 1)}…` : text)
 
-export const register: Register = on => {
+export const register: Register = (on, options) => {
+  const socket = String(options.apiSocket ?? '')
+
   on('session.start', async ($, e, next) => {
+    report($, socket, { type: 'session', state: 'start', cwd: e.cwd })
     await $.command.register({
       name: 'usage-monitor',
       description: 'Token, cost and tool-call usage per subagent (add "reset" to zero the counters)',
@@ -55,6 +59,8 @@ export const register: Register = on => {
   })
 
   on('session.end', async ($, e, next) => {
+    report($, socket, { type: 'session', state: e.reason === 'clear' ? 'clear' : 'end' }, e.sessionId)
+
     if (e.reason === 'clear') {
       await update($, ledger, emptyLedger)
       $.ui.status(undefined)
@@ -71,6 +77,7 @@ export const register: Register = on => {
       const who = e.name === undefined ? e.subagentType : `${e.name} (${e.subagentType})`
 
       await update($, ledger, l => setSpawnModel(setLabel(l, id, `${who}: ${e.description}`), id, spawned.model))
+      report($, socket, { type: 'agent', agent: id, label: `${who}: ${e.description}`, model: spawned.model })
     }
 
     return spawned
@@ -82,6 +89,7 @@ export const register: Register = on => {
 
     if (usage !== null) {
       publish($, await update($, ledger, l => addUsage(l, e.agentId ?? MAIN, usage.model, usage)))
+      report($, socket, usageEvent(e.agentId ?? MAIN, usage))
     }
 
     return result
@@ -89,6 +97,7 @@ export const register: Register = on => {
 
   on('tool.call', async ($, e, next) => {
     publish($, await update($, ledger, l => addToolCall(l, e.agentId ?? MAIN, String(e.tool))))
+    report($, socket, { type: 'tool', agent: e.agentId ?? MAIN, tool: String(e.tool) })
 
     return next(e)
   })

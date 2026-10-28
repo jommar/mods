@@ -1,6 +1,14 @@
 {
   "name": "usage-monitor",
-  "version": "0.1.1",
-  "description": "Live token, cost and tool-call accounting for the session and every subagent: status line, /usage-monitor pane, and a toast when a subagent finishes.",
-  "types": "./types/index.d.ts"
+  "version": "0.2.2",
+  "description": "Live token, cost and tool-call accounting for the session and every subagent: status line, /usage-monitor pane, and a toast when a subagent finishes. Can also report to a local usage-monitor API for history and a web dashboard (off by default).",
+  "types": "./types/index.d.ts",
+  "userConfig": {
+    "apiSocket": {
+      "type": "string",
+      "title": "API socket",
+      "description": "Optional. Absolute path of the usage-monitor API's Unix socket, for example /run/user/1000/usage-monitor.sock (id -u prints your uid). Leave empty to disable reporting. See the mod's README.",
+      "default": ""
+    }
+  }
 }
